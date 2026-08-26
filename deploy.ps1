@@ -4,7 +4,11 @@
 #
 #   .\deploy.ps1
 
-$ErrorActionPreference = "Stop"
+# NOT "Stop": gcloud writes ordinary progress to stderr, and Windows
+# PowerShell turns any native stderr output into a terminating
+# NativeCommandError under "Stop" -- aborting the script on success messages.
+# Exit codes are checked explicitly instead.
+$ErrorActionPreference = "Continue"
 
 $PROJECT  = "dm-agentic-hackathon-2026"
 $REGION   = "us-central1"
@@ -51,6 +55,11 @@ gcloud run deploy $SERVICE `
     --memory 1Gi `
     --timeout 900 `
     --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=global,MEDIC_MODEL=gemini-3.7-flash,FIRESTORE_DATABASE=hackathon,MEDIC_BQ_DATASET=medic_demo"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Cloud Run deploy failed (exit $LASTEXITCODE). See the build log above." -ForegroundColor Red
+    exit 1
+}
 
 $URL = gcloud run services describe $SERVICE --project $PROJECT --region $REGION --format="value(status.url)"
 Write-Host "==> Deployed: $URL" -ForegroundColor Green

@@ -4,6 +4,8 @@
 
 Built for the [All Things Agentic Hackathon](https://allthingsagentichackathon.devpost.com/) · Track: **The Taskmaster**
 
+**Live on Cloud Run:** https://pipeline-medic-333215501397.us-central1.run.app · [`/healthz`](https://pipeline-medic-333215501397.us-central1.run.app/healthz) · [`/runs`](https://pipeline-medic-333215501397.us-central1.run.app/runs)
+
 ---
 
 ## The problem
@@ -46,6 +48,11 @@ It also chose to keep `AS customer_id` as the *output* column name while switchi
 
 ## Architecture
 
+![Pipeline Medic architecture](docs/architecture.png)
+
+<details>
+<summary>Text version</summary>
+
 ```
    Scheduler / Airflow / dbt              ┌──────────────────────────┐
    (a pipeline model fails)               │      Vertex AI           │
@@ -73,6 +80,8 @@ It also chose to keep `AS customer_id` as the *output* column name while switchi
    │   fixes per model)  │              │   medic_demo warehouse       │
    └─────────────────────┘              └──────────────────────────────┘
 ```
+
+</details>
 
 **Asynchronous by design.** The Pub/Sub endpoint acknowledges the message *immediately* and runs triage in a background task. Triage takes several model turns and BigQuery round trips — far longer than Pub/Sub's ack deadline — so acking first is what prevents duplicate redelivery and makes the agent genuinely fire-and-forget. Nobody is waiting on an HTTP response.
 
