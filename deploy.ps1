@@ -76,6 +76,6 @@ if (-not $subExists) {
 
 Write-Host ""
 Write-Host "Done. Try it:" -ForegroundColor Green
-Write-Host "  curl $URL/healthz"
+Write-Host "  curl $URL/health"
 Write-Host "  python -m demo.break_it            # async, via Pub/Sub"
 Write-Host "  python -m demo.break_it --url $URL # synchronous, watch the verdict"

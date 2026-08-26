@@ -4,7 +4,7 @@
 
 Built for the [All Things Agentic Hackathon](https://allthingsagentichackathon.devpost.com/) · Track: **The Taskmaster**
 
-**Live on Cloud Run:** https://pipeline-medic-333215501397.us-central1.run.app · [`/healthz`](https://pipeline-medic-333215501397.us-central1.run.app/healthz) · [`/runs`](https://pipeline-medic-333215501397.us-central1.run.app/runs)
+**Live on Cloud Run:** https://pipeline-medic-333215501397.us-central1.run.app · [`/health`](https://pipeline-medic-333215501397.us-central1.run.app/health) · [`/runs`](https://pipeline-medic-333215501397.us-central1.run.app/runs)
 
 ---
 
@@ -167,7 +167,7 @@ python -m demo.break_it --url https://YOUR-SERVICE.run.app
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/healthz` | config check — model, location, database |
+| `GET` | `/health` | config check — model, location, database |
 | `POST` | `/pubsub` | Pub/Sub push target; acks immediately, triages in background |
 | `POST` | `/triage` | synchronous triage, for demos and testing |
 | `GET` | `/runs` | recent triage runs, newest first |

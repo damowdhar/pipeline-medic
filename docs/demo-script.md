@@ -60,7 +60,7 @@ That last beat is the strongest thirty seconds in the demo. Don't cut it.
 Show, in order:
 
 1. **Cloud Run** → the `pipeline-medic` service, green, with its `.run.app` URL
-2. **The live URL** → hit `/healthz` in a browser, showing `gemini-3.7-flash` and `location: global`
+2. **The live URL** → hit `/health` in a browser, showing `gemini-3.7-flash` and `location: global`
 3. **Cloud Run logs** → the triage that just ran
 4. **Firestore** → the `triage_runs` collection, with real verdicts
 5. **Pub/Sub** → the `pipeline-failures` topic and its push subscription

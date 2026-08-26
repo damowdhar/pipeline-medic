@@ -28,8 +28,12 @@ log = logging.getLogger("pipeline-medic")
 app = FastAPI(title="Pipeline Medic")
 
 
-@app.get("/healthz")
-def healthz() -> dict:
+# NOT "/healthz": Google's frontend reserves that path on *.run.app and
+# intercepts it before the request reaches the container, returning its own
+# 404. The route registers fine and shows up in /openapi.json, it just never
+# receives traffic. Any other path works.
+@app.get("/health")
+def health() -> dict:
     return {
         "ok": True,
         "model": config.model,
