@@ -10,12 +10,47 @@ says the SQL is valid.
 
 from __future__ import annotations
 
+import ssl
+import time
 from pathlib import Path
 
-from google.api_core.exceptions import BadRequest, NotFound
+import requests.exceptions
+from google.api_core.exceptions import BadRequest, NotFound, ServerError, TooManyRequests
 from google.cloud import bigquery
 
 from app.config import config
+
+# Transient failures worth retrying. Deliberately narrow: a BadRequest means
+# the SQL is genuinely invalid, which is a real answer the agent needs to see,
+# not something to paper over by trying again.
+RETRYABLE = (
+    requests.exceptions.SSLError,
+    requests.exceptions.ConnectionError,
+    requests.exceptions.Timeout,
+    ssl.SSLError,
+    ConnectionError,
+    ServerError,
+    TooManyRequests,
+)
+
+
+def _retry(fn, attempts: int = 3, base_delay: float = 1.0):
+    """Retry a BigQuery call through transient network failures.
+
+    Cloud Run occasionally drops a TLS connection mid-request
+    (SSLEOFError: EOF occurred in violation of protocol). Without this, a
+    single dropped connection anywhere in a six-tool triage kills the whole
+    run and no fix is produced.
+    """
+    last: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            return fn()
+        except RETRYABLE as exc:
+            last = exc
+            if attempt < attempts - 1:
+                time.sleep(base_delay * (2**attempt))
+    raise last  # type: ignore[misc]
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "demo" / "models"
 
@@ -69,7 +104,7 @@ def get_table_schema(table_name: str) -> dict:
     """
     table_id = f"{config.project_id}.{config.bq_dataset}.{table_name}"
     try:
-        table = _bq().get_table(table_id)
+        table = _retry(lambda: _bq().get_table(table_id))
     except NotFound:
         return {"error": f"table not found: {table_id}"}
     return {
@@ -86,7 +121,7 @@ def list_tables() -> dict:
     """
     dataset_id = f"{config.project_id}.{config.bq_dataset}"
     try:
-        tables = list(_bq().list_tables(dataset_id))
+        tables = _retry(lambda: list(_bq().list_tables(dataset_id)))
     except NotFound:
         return {"error": f"dataset not found: {dataset_id}"}
     return {"tables": sorted(t.table_id for t in tables)}
@@ -108,7 +143,9 @@ def dry_run_sql(sql: str) -> dict:
     """
     job_config = bigquery.QueryJobConfig(dry_run=True, use_query_cache=False)
     try:
-        job = _bq().query(sql, job_config=job_config, location=config.bq_location)
+        job = _retry(
+            lambda: _bq().query(sql, job_config=job_config, location=config.bq_location)
+        )
     except BadRequest as exc:
         return {"valid": False, "error": str(exc.message or exc)}
     except Exception as exc:  # surface anything else to the model verbatim
@@ -195,8 +232,8 @@ def run_query(sql: str, max_rows: int = 20) -> dict:
     """
     capped = min(max_rows, 50)
     try:
-        job = _bq().query(sql, location=config.bq_location)
-        rows = [_jsonable(dict(r)) for r in job.result(max_results=capped)]
+        job = _retry(lambda: _bq().query(sql, location=config.bq_location))
+        rows = [_jsonable(dict(r)) for r in _retry(lambda: job.result(max_results=capped))]
     except Exception as exc:
         return {"error": f"{type(exc).__name__}: {exc}"}
     return {"row_count": len(rows), "rows": rows}

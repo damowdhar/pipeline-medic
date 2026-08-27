@@ -99,14 +99,17 @@ One Chrome window, these six tabs, **in this order**:
 
 | # | Tab | URL |
 |---|---|---|
-| 1 | Cloud Run logs | `https://console.cloud.google.com/run/detail/us-central1/pipeline-medic/logs?project=dm-agentic-hackathon-2026` |
+| 1 | Cloud Run logs | `https://console.cloud.google.com/run/detail/us-central1/pipeline-medic/observability/logs?project=dm-agentic-hackathon-2026` |
 | 2 | Pull requests | `https://github.com/damowdhar/pipeline-medic/pulls` |
-| 3 | Cloud Run service | `https://console.cloud.google.com/run/detail/us-central1/pipeline-medic/metrics?project=dm-agentic-hackathon-2026` |
+| 3 | Cloud Run service | `https://console.cloud.google.com/run/detail/us-central1/pipeline-medic?project=dm-agentic-hackathon-2026` |
 | 4 | Health check | `https://pipeline-medic-333215501397.us-central1.run.app/health` |
 | 5 | Firestore | `https://console.cloud.google.com/firestore/databases/hackathon/data/panel/triage_runs?project=dm-agentic-hackathon-2026` |
 | 6 | Pub/Sub topic | `https://console.cloud.google.com/cloudpubsub/topic/detail/pipeline-failures?project=dm-agentic-hackathon-2026` |
 
 Tick **Pretty-print** on tab 4. Raw JSON is unreadable on video.
+
+> Console paths move around. If tab 1 or 3 gives "URL not found", navigate by hand: **Cloud Run → Services → pipeline-medic → Observability → Logs**. Or use Logs Explorer, which is stable:
+> `https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%20resource.labels.service_name%3D%22pipeline-medic%22?project=dm-agentic-hackathon-2026`
 
 ---
 

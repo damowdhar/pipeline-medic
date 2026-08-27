@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import logging
+import time
 
 import requests
 
@@ -57,25 +58,45 @@ def _headers() -> dict:
     }
 
 
+def _request(method: str, path: str, payload: dict | None = None) -> dict:
+    """One GitHub API call, retried through transient network failures.
+
+    Only connection-level failures are retried. A 4xx is a real answer --
+    a bad token, a branch that already exists -- and retrying would just
+    delay the error by three seconds.
+    """
+    last: Exception | None = None
+    for attempt in range(3):
+        try:
+            r = requests.request(
+                method,
+                f"{API}{path}",
+                headers=_headers(),
+                json=payload,
+                timeout=TIMEOUT,
+            )
+        except (requests.exceptions.SSLError, requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout) as exc:
+            last = exc
+            if attempt < 2:
+                time.sleep(1.0 * (2**attempt))
+            continue
+        if r.status_code >= 400:
+            raise GitHubError(f"{method} {path} -> {r.status_code}: {r.text[:300]}")
+        return r.json()
+    raise GitHubError(f"{method} {path} failed after retries: {last}")
+
+
 def _get(path: str) -> dict:
-    r = requests.get(f"{API}{path}", headers=_headers(), timeout=TIMEOUT)
-    if r.status_code >= 400:
-        raise GitHubError(f"GET {path} -> {r.status_code}: {r.text[:300]}")
-    return r.json()
+    return _request("GET", path)
 
 
 def _post(path: str, payload: dict) -> dict:
-    r = requests.post(f"{API}{path}", headers=_headers(), json=payload, timeout=TIMEOUT)
-    if r.status_code >= 400:
-        raise GitHubError(f"POST {path} -> {r.status_code}: {r.text[:300]}")
-    return r.json()
+    return _request("POST", path, payload)
 
 
 def _put(path: str, payload: dict) -> dict:
-    r = requests.put(f"{API}{path}", headers=_headers(), json=payload, timeout=TIMEOUT)
-    if r.status_code >= 400:
-        raise GitHubError(f"PUT {path} -> {r.status_code}: {r.text[:300]}")
-    return r.json()
+    return _request("PUT", path, payload)
 
 
 def open_fix_pull_request(
