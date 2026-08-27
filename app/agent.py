@@ -46,6 +46,10 @@ Work in this order:
    after one attempt and do not propose SQL you have not validated.
 6. Optionally sanity-check the result with run_query on a small sample to
    confirm the fix returns plausible data, not just compilable SQL.
+7. Once — and only once — dry_run_sql reports valid, call open_pull_request
+   with the validated SQL. Never call it with SQL you have not validated.
+   If it returns opened: false, that is fine; carry on and report the fix
+   anyway. The reason will be recorded.
 
 When you are done, reply with ONLY a JSON object, no prose and no code fences:
 
@@ -56,7 +60,8 @@ When you are done, reply with ONLY a JSON object, no prose and no code fences:
   "fixed_sql": "<the full corrected SQL, validated>",
   "validated": true | false,
   "dry_run_attempts": <integer>,
-  "explanation": "<what you changed and why, for the pull request body>"
+  "explanation": "<what you changed and why, for the pull request body>",
+  "pr_url": "<the pull request URL, or null if none was opened>"
 }
 
 If you genuinely cannot find a fix, return the same object with
@@ -78,6 +83,7 @@ def build_agent() -> LlmAgent:
             tools.get_table_schema,
             tools.dry_run_sql,
             tools.run_query,
+            tools.open_pull_request,
         ],
         generate_content_config=types.GenerateContentConfig(temperature=0.0),
     )

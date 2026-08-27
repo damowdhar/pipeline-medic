@@ -72,7 +72,7 @@ This prints the real BigQuery error *and* publishes to Pub/Sub. One command cove
 **Then take your hands off the keyboard** and start the log tail:
 
 ```powershell
-gcloud run services logs tail pipeline-medic --region us-central1 --project dm-agentic-hackathon-2026
+gcloud run services logs read pipeline-medic --region us-central1 --project dm-agentic-hackathon-2026 --limit 30
 ```
 
 Triage takes about 90 seconds. Narrate the Gemini turns as they scroll. This is the heart of the demo — the agent working while nobody drives.
@@ -116,7 +116,7 @@ Live: https://pipeline-medic-333215501397.us-central1.run.app/health
 Code: https://github.com/damowdhar/pipeline-medic
 ```
 
-4. **Visibility: Public.** Not unlisted, not private — the rules are explicit, and an unlisted video can disqualify the submission.
+4. **Visibility: Public.** The brief states "must be public (not unlisted)" for the *bonus content* item; it doesn't spell out a visibility rule for the demo video itself. Public is still the safe choice — judges have to be able to watch it without friction. Check the Rules tab if you want certainty, and whether YouTube/Vimeo specifically is required.
 5. Set "Not made for kids"
 6. Copy the URL from the address bar once published — `https://www.youtube.com/watch?v=XXXXXXXXXXX`
 

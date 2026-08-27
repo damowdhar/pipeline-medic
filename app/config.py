@@ -45,8 +45,30 @@ class Config:
     pubsub_topic: str = _env("MEDIC_PUBSUB_TOPIC", "pipeline-failures")
     port: int = int(_env("PORT", "8080"))
 
-    # Safety rail: the agent proposes fixes but never pushes without this on.
+    # Safety rail: the agent opens no pull requests unless this is on.
+    # Even when on, it only ever writes to a new branch -- never to the
+    # default branch.
     allow_pull_requests: bool = _env("MEDIC_ALLOW_PRS", "false").lower() == "true"
+    github_repo: str = _env("MEDIC_GITHUB_REPO", "damowdhar/pipeline-medic")
+
+    def github_token(self) -> str:
+        """The GitHub token, from the environment or Secret Manager.
+
+        Cloud Run mounts the `github-token` secret as GITHUB_TOKEN, so the
+        environment is the normal path. The Secret Manager fallback exists so
+        local runs work without copying the token into a shell profile.
+        """
+        token = os.environ.get("GITHUB_TOKEN", "").strip()
+        if token:
+            return token
+        try:
+            from google.cloud import secretmanager
+
+            client = secretmanager.SecretManagerServiceClient()
+            name = f"projects/{self.project_id}/secrets/github-token/versions/latest"
+            return client.access_secret_version(name=name).payload.data.decode("utf-8").strip()
+        except Exception:
+            return ""
 
     def use_vertex_env(self) -> None:
         """Point the google-genai SDK at Vertex AI rather than the public API.

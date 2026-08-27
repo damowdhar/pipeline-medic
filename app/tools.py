@@ -116,6 +116,53 @@ def dry_run_sql(sql: str) -> dict:
     return {"valid": True, "bytes_scanned": job.total_bytes_processed}
 
 
+def open_pull_request(
+    model_name: str,
+    fixed_sql: str,
+    root_cause: str,
+    explanation: str,
+    run_id: str,
+) -> dict:
+    """Open a pull request containing a validated fix.
+
+    Call this ONLY after dry_run_sql has confirmed the SQL is valid. Never
+    call it with SQL you have not validated -- the whole point of this agent
+    is that it does not propose guesses.
+
+    Args:
+        model_name: The model being fixed, e.g. "dim_customers".
+        fixed_sql: The full corrected SQL, already validated.
+        root_cause: One or two sentences on what actually broke.
+        explanation: What changed and why, for the pull request body.
+        run_id: The triage run id given to you in the task.
+
+    Returns:
+        {"opened": true, "pr_url": ...} on success, or {"opened": false,
+        "reason": ...} if pull requests are disabled or GitHub rejected it.
+    """
+    if not config.allow_pull_requests:
+        return {
+            "opened": False,
+            "reason": "pull requests are disabled (MEDIC_ALLOW_PRS is false)",
+        }
+
+    # Imported here so a missing token or GitHub outage can never stop the
+    # rest of the triage from running.
+    from app import github_pr
+
+    try:
+        result = github_pr.open_fix_pull_request(
+            model_name=model_name,
+            fixed_sql=fixed_sql,
+            root_cause=root_cause,
+            explanation=explanation,
+            run_id=run_id,
+        )
+    except Exception as exc:
+        return {"opened": False, "reason": f"{type(exc).__name__}: {exc}"}
+    return {"opened": True, **result}
+
+
 def _jsonable(value):
     """Coerce BigQuery values into something JSON-serializable.
 

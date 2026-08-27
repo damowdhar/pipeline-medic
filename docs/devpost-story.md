@@ -16,8 +16,13 @@ Pipeline Medic is an autonomous on-call agent for a data warehouse. When a pipel
 4. Writes a corrected version of the model
 5. **Proves the fix works** by dry-running it against BigQuery
 6. If BigQuery rejects it, reads the real compiler error, revises, and tries again
+7. **Opens a pull request** with the validated fix — branch, commit, and a PR body explaining the root cause
 
 Then it records the verdict, the reasoning, and the validated SQL — and goes back to sleep.
+
+Step 7 is what makes it a Taskmaster rather than an advisor. It doesn't hand you a suggestion to evaluate; it does the work and leaves a reviewable pull request. [PR #1 on the repo](https://github.com/damowdhar/pipeline-medic/pull/1) was opened by the agent, unattended, from a single Pub/Sub message.
+
+It never writes to the default branch. Merging stays a human decision — an agent that can put code into production unreviewed is a different risk category, and nothing here needs that to be useful.
 
 ## The part I care about most: it isn't allowed to guess
 
@@ -73,6 +78,5 @@ The second lesson is about honesty as a feature. Building in an explicit `needs_
 
 ## What's next
 
-- Open the pull request automatically (already scaffolded behind an off-by-default flag — an agent that can modify a production repo should be a deliberate choice, not a default)
-- Learn from rejected fixes, not just accepted ones
+- Learn from rejected fixes, not just accepted ones — a closed PR is a signal, and right now it's ignored
 - Expand beyond schema drift to data-quality failures: row-count collapses, null spikes, grain changes

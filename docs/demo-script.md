@@ -34,7 +34,7 @@ Publish the failure to Pub/Sub, then **take your hands off the keyboard**:
 
 ```bash
 python -m demo.break_it
-gcloud run services logs tail pipeline-medic --region us-central1
+gcloud run services logs read pipeline-medic --region us-central1 --limit 30
 ```
 
 > "I've published the failure to Pub/Sub. That's the last thing I do — from here nobody is driving.

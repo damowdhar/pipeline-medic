@@ -29,7 +29,8 @@ $roles = @(
     "roles/aiplatform.user",
     "roles/bigquery.jobUser",
     "roles/bigquery.dataEditor",
-    "roles/datastore.user"
+    "roles/datastore.user",
+    "roles/secretmanager.secretAccessor"
 )
 foreach ($r in $roles) {
     Write-Host "    granting $r"
@@ -54,7 +55,8 @@ gcloud run deploy $SERVICE `
     --allow-unauthenticated `
     --memory 1Gi `
     --timeout 900 `
-    --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=global,MEDIC_MODEL=gemini-3.7-flash,FIRESTORE_DATABASE=hackathon,MEDIC_BQ_DATASET=medic_demo"
+    --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT,GOOGLE_CLOUD_LOCATION=global,MEDIC_MODEL=gemini-3.7-flash,FIRESTORE_DATABASE=hackathon,MEDIC_BQ_DATASET=medic_demo,MEDIC_ALLOW_PRS=true,MEDIC_GITHUB_REPO=damowdhar/pipeline-medic" `
+    --set-secrets "GITHUB_TOKEN=github-token:latest"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Cloud Run deploy failed (exit $LASTEXITCODE). See the build log above." -ForegroundColor Red

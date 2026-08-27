@@ -26,8 +26,11 @@ Pipeline Medic is required to *demonstrate* its fix is correct. Its key tool is 
 4. Write a candidate fix
 5. **Dry-run it.** If BigQuery says no, read the real compiler error, revise, try again
 6. Only report a fix marked `validated: true` once the warehouse itself has confirmed it compiles
+7. **Open a pull request** with the validated fix — a branch, a commit, and a PR body explaining the root cause
 
 The agent isn't trusted to be right the first time. It's required to iterate until it's provably right. A fix that never validates is reported honestly as `needs_human` rather than dressed up as an answer.
+
+Step 7 is what makes this a Taskmaster rather than an advisor. The agent doesn't hand you a suggestion to evaluate — it does the work and leaves a reviewable pull request. [PR #1](https://github.com/damowdhar/pipeline-medic/pull/1) was opened by the agent, unattended.
 
 ### A real run
 
@@ -154,7 +157,7 @@ Then trigger it asynchronously:
 
 ```bash
 python -m demo.break_it                          # publish to Pub/Sub
-gcloud run services logs tail pipeline-medic --region us-central1
+gcloud run services logs read pipeline-medic --region us-central1 --limit 30
 ```
 
 Or synchronously, to watch the verdict come back:
@@ -187,7 +190,13 @@ export GOOGLE_APPLICATION_CREDENTIALS=$CLOUDSDK_CONFIG/application_default_crede
 
 ## Safety
 
-`MEDIC_ALLOW_PRS` is `false` by default. The agent writes its validated patch to Firestore rather than pushing anything. Opening pull requests is opt-in — an agent that can autonomously modify a production repository should be a deliberate choice, not a default.
+**The agent never writes to your default branch.** It creates a new branch, commits the fix there, and opens a pull request. Merging stays a human decision. An agent that can put code into production unreviewed is a different risk category, and nothing here needs that to be useful.
+
+**`MEDIC_ALLOW_PRS` is `false` by default.** With it off, the agent still diagnoses and validates, and records the fix to Firestore — it just doesn't touch GitHub. Turning it on is a deliberate choice. The Cloud Run deployment sets it to `true`.
+
+**The token is never in the repo.** It lives in Secret Manager, is mounted into Cloud Run as `GITHUB_TOKEN` at runtime, and should be a fine-grained token scoped to this one repository with only Contents and Pull requests write access.
+
+**A PR failure never fails the triage.** If GitHub is unreachable or the token is wrong, `open_pull_request` returns a reason, the agent carries on, and the validated fix is still recorded. The reason is stored with the run.
 
 `deploy.ps1` uses `--allow-unauthenticated` so hackathon judges can reach the URL. For real use, drop that flag and require an OIDC token on the Pub/Sub push subscription.
 
@@ -197,14 +206,16 @@ export GOOGLE_APPLICATION_CREDENTIALS=$CLOUDSDK_CONFIG/application_default_crede
 app/
   config.py     configuration; documents the global-endpoint and database-id traps
   agent.py      the ADK LlmAgent, its instruction, and the triage loop
-  tools.py      the six tools, including the dry-run oracle
+  tools.py      the seven tools, including the dry-run oracle
   state.py      Firestore persistence and prior-fix recall
+  github_pr.py  branch + commit + pull request, via the GitHub API
   server.py     FastAPI service: Pub/Sub push + sync triage + run history
 demo/
   seed.py       builds the demo warehouse with the break already applied
   models/       the pipeline model SQL the agent reads and repairs
   break_it.py   stands in for a scheduler: runs the model, emits the failure
   local_test.py end-to-end triage without deploying
+  reset.py      restores the broken SQL, for repeat demos
 Dockerfile
 deploy.ps1
 ```

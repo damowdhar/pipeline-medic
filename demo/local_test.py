@@ -37,6 +37,7 @@ async def main() -> None:
     print(f"dry runs       : {verdict.get('dry_run_attempts')}")
     print(f"tool calls     : {verdict.get('tool_calls')}")
     print(f"run id         : {verdict.get('run_id')}")
+    print(f"pull request   : {verdict.get('pr_url') or '(none opened)'}")
     print()
     print("fixed SQL:")
     print(verdict.get("fixed_sql", "(none)"))

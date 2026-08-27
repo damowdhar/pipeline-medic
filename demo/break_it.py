@@ -55,7 +55,10 @@ def publish(failure: dict) -> None:
     future = publisher.publish(topic, json.dumps(failure).encode("utf-8"))
     print(f"published to {topic} (message id {future.result()})")
     print("The agent will pick this up asynchronously. Watch it with:")
-    print(f"  gcloud run services logs tail pipeline-medic --region {config.region}")
+    print(
+        f"  gcloud run services logs read pipeline-medic "
+        f"--region {config.region} --limit 30"
+    )
 
 
 def post(url: str, failure: dict) -> None:
