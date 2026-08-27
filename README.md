@@ -139,6 +139,8 @@ python -m demo.seed
 
 Creates `medic_demo.raw_customers` and `medic_demo.raw_orders` — with the column rename already applied, so the pipeline is broken by design and the failure is reproducible on every run.
 
+> **`demo/models/dim_customers.sql` is intentionally broken and should stay that way.** It's the thing the agent repairs. If you merge one of the agent's pull requests, the model gets fixed and the demo stops failing — restore it with `python -m demo.reset`.
+
 ### 5. Watch it work locally
 
 ```bash
